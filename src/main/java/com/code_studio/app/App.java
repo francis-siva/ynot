@@ -3,6 +3,9 @@ package com.code_studio.app;
 import java.io.File;
 import java.io.IOException;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -26,7 +29,8 @@ public class App
         System.out.println("\"junit-jupiter-api\" version: " + getDependencyVersion(FILENAME, "org.junit.jupiter", "junit-jupiter-api"));
         System.out.println("\"junit-jupiter-engine\" version: " + getDependencyVersion(FILENAME, "org.junit.jupiter", "junit-jupiter-engine"));
         
-        
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("com.code_studio.access.jpa");
+        EntityManager em = emf.createEntityManager();
     }
 
     //   ////   ////   ////   //
