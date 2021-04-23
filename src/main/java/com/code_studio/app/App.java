@@ -2,6 +2,7 @@ package com.code_studio.app;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -14,6 +15,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import com.code_studio.model.Task;
 
 /**
  * App
@@ -31,6 +34,21 @@ public class App
         
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("com.code_studio.access.jpa");
         EntityManager em = emf.createEntityManager();
+
+        List<Task> taskList = null;
+        final String selectAllTask = "SELECT * FROM task";
+        
+        if(em.createNativeQuery(selectAllTask, Task.class).getResultList() instanceof List) {
+        	taskList = (List<Task>) em.createNativeQuery(selectAllTask, Task.class).getResultList();
+		}
+
+        if(taskList.size() > 0) {
+	        for(int i = 0; i < taskList.size(); i++) {
+	        	System.out.println("Id: " + taskList.get(i).getId() + " Todo: " + taskList.get(i).getTodo() + 
+	        			" Priority: " + taskList.get(i).getPriority() + 
+	        			" Completed: " + taskList.get(i).get_isDone());
+	        }
+        }
     }
 
     //   ////   ////   ////   //
