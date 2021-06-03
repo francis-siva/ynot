@@ -28,12 +28,12 @@ public class App
     public static void main( String[] args )
     {
 
-        final String FILENAME = "./pom.xml";
+        final String FILENAME = "./pom.xml", PERSISTENCE_UNIT = "com.code_studio.access.jpa";
         System.out.println("getBuildPackaging: " + getBuildPackaging(FILENAME));
         System.out.println("\"junit-jupiter-api\" version: " + getDependencyVersion(FILENAME, "org.junit.jupiter", "junit-jupiter-api"));
         System.out.println("\"junit-jupiter-engine\" version: " + getDependencyVersion(FILENAME, "org.junit.jupiter", "junit-jupiter-engine"));
         
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("com.code_studio.access.jpa");
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT);
         EntityManager em = emf.createEntityManager();
 
         List<Task> taskList = null;
@@ -116,6 +116,7 @@ public class App
      */
     public static String getDependencyVersion(final String fileName, String groupId, String artifactId) {
     	String version = "";
+    	boolean input_groupIdFound = false, input_artifactIdFound = false;
     	
     	if((groupId != null && groupId.trim().length() > 0) && (artifactId != null && artifactId.trim().length() > 0)) {
 	    	
@@ -139,6 +140,7 @@ public class App
 						
 						//Search param groupId value in groupIdValue e.g. groupIdValue.contentEquals("org.junit.jupiter")
 						if(groupIdValue.contentEquals(groupId)) {
+							input_groupIdFound = true;
 							
 							artifactIdValue = dependency.getElementsByTagName("artifactId").item(0).getTextContent();
 							
@@ -146,38 +148,45 @@ public class App
 							if(artifactIdValue.contentEquals(artifactId)) {
 								String regex = "^\\$\\{((([a-zA-Z0-9])+([a-zA-Z0-9\\.])*([a-zA-Z0-9])+)|([a-zA-Z0-9]))\\}$";
 
-								System.out.println("Regex res_isPropertyName: " + Pattern.matches(regex, dependency.getElementsByTagName("version").item(0).getTextContent()));
 								boolean valueisPropertyName = Pattern.matches(regex, dependency.getElementsByTagName("version").item(0).getTextContent());
 								
 								//Check in case we have property instead of artifactId's version value
 								if(valueisPropertyName) {
+									
 									String property = dependency.getElementsByTagName("version").item(0).getTextContent();
-									System.out.println("index ${: "+ property.indexOf("${"));System.out.println("index }: "+property.indexOf("}"));
 									
 									//property starts with "${" and ends by "}" delimiters
 									boolean propertyisWithDelimiter = ((property.indexOf("${") == 0) && (property.indexOf("}") == property.length()-1));
 									
-									System.out.println("propertyisWithDelimiter: " + propertyisWithDelimiter);
 									if(propertyisWithDelimiter) {
+										
 										//Keep property without its delimiters
 										property = property.substring(property.indexOf("${")+2, property.indexOf("}"));
 										System.out.println("substr_property: " + property);
+										
 										//nodes must be reinitialized to keep the appropriate Element (property)
 										nodes = domDoc.getElementsByTagName(property);
 										
 										if(nodes.getLength() == 1) {
-											System.out.println("version$: " + nodes.item(0).getTextContent());
+											input_artifactIdFound = true;
+											
 											version = nodes.item(0).getTextContent();
 										}										
-									}
-									
+									}									
 								}
 								else {//regular use case
-									version = dependency.getElementsByTagName("version").item(0).getTextContent();
-								}
-								
+									version = dependency.getElementsByTagName("version").item(0).getTextContent();input_artifactIdFound = true;
+								}								
 							}
-						}					
+						}
+					}
+					//Error message's handler
+					if(!input_artifactIdFound) {
+						version = "Error:";
+						String artifactIdOnlyNotFound = " element <artifact>" + artifactId + "</artifact> not found for <groupId>" + groupId + "</groupId>.";
+						String artifactIdAndGroupIdNotFound = " no such element in file. Unable to locate <groupId>" + groupId + "</groupId> \nand <artifactId>" + artifactId + "</artifactId>.";
+						
+						version += (input_groupIdFound)? artifactIdOnlyNotFound : artifactIdAndGroupIdNotFound;
 					}
 					
 				} catch (SAXException | IOException e) {
