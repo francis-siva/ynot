@@ -3,6 +3,7 @@ package com.code_studio.app;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -143,7 +144,38 @@ public class App
 							
 							//Search param artifactId value in artifactIdValue e.g. artifactIdValue.contentEquals("junit-jupiter-api")
 							if(artifactIdValue.contentEquals(artifactId)) {
-								version = dependency.getElementsByTagName("version").item(0).getTextContent();
+								String regex = "^\\$\\{((([a-zA-Z0-9])+([a-zA-Z0-9\\.])*([a-zA-Z0-9])+)|([a-zA-Z0-9]))\\}$";
+
+								System.out.println("Regex res_isPropertyName: " + Pattern.matches(regex, dependency.getElementsByTagName("version").item(0).getTextContent()));
+								boolean valueisPropertyName = Pattern.matches(regex, dependency.getElementsByTagName("version").item(0).getTextContent());
+								
+								//Check in case we have property instead of artifactId's version value
+								if(valueisPropertyName) {
+									String property = dependency.getElementsByTagName("version").item(0).getTextContent();
+									System.out.println("index ${: "+ property.indexOf("${"));System.out.println("index }: "+property.indexOf("}"));
+									
+									//property starts with "${" and ends by "}" delimiters
+									boolean propertyisWithDelimiter = ((property.indexOf("${") == 0) && (property.indexOf("}") == property.length()-1));
+									
+									System.out.println("propertyisWithDelimiter: " + propertyisWithDelimiter);
+									if(propertyisWithDelimiter) {
+										//Keep property without its delimiters
+										property = property.substring(property.indexOf("${")+2, property.indexOf("}"));
+										System.out.println("substr_property: " + property);
+										//nodes must be reinitialized to keep the appropriate Element (property)
+										nodes = domDoc.getElementsByTagName(property);
+										
+										if(nodes.getLength() == 1) {
+											System.out.println("version$: " + nodes.item(0).getTextContent());
+											version = nodes.item(0).getTextContent();
+										}										
+									}
+									
+								}
+								else {//regular use case
+									version = dependency.getElementsByTagName("version").item(0).getTextContent();
+								}
+								
 							}
 						}					
 					}
